@@ -1,3 +1,0 @@
-Collin Bauer
-
-Terence Carey
