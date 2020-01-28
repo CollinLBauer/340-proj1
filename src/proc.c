@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <dirent.h> 
 #include <stdlib.h>
-  
+#include <string.h>
+
 
 
 struct process {
@@ -44,7 +45,11 @@ struct process* initProc(char fileName[]) {
 
 int main(int argc, char *argv[]) 
 { 
-    char name[] = "/proc/1185/stat";
+    
+    char name[255];
+    strcat(name, "/proc/");
+    strcat(name, argv[1]);
+    strcat(name, "/stat");
     struct process* testProc = initProc(name);
     printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>\n", testProc->pid, testProc->ppid, testProc->vsize, testProc->comm);
 };
