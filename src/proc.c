@@ -29,9 +29,9 @@ struct process* initProc(char fileName[]) {
 
     fscanf(inFile, "%d", &(proc->pid));
     fscanf(inFile, "%s", (proc->comm));
-    fscanf(inFile, "%d", &dummy);
+    fscanf(inFile, "%ls", &dummy);
     fscanf(inFile, "%d", &(proc->ppid));
-    for (int i = 0; i < 19; i++) 
+    for (int i = 0; i < 18; i++) 
         fscanf(inFile, "%d", &dummy);
     fscanf(inFile, "%ld", &(proc->vsize));
 
@@ -44,7 +44,7 @@ struct process* initProc(char fileName[]) {
 
 int main(int argc, char *argv[]) 
 { 
-    char name[] = "/proc/1/stat";
+    char name[] = "/proc/1185/stat";
     struct process* testProc = initProc(name);
     printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>\n", testProc->pid, testProc->ppid, testProc->vsize, testProc->comm);
 };
