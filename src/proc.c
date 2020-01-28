@@ -7,14 +7,14 @@
 struct process {
     int pid;
     int ppid;
-    char* comm;
+    char comm[255];
     unsigned long int vsize;
 
 };
 
 struct process* initProc(char fileName[]) {
 
-    struct process *proc = NULL;
+    struct process *proc = malloc(sizeof(struct process));
     FILE *inFile = fopen(fileName, "r");
     int dummy;
     
@@ -31,9 +31,8 @@ struct process* initProc(char fileName[]) {
     fscanf(inFile, "%s", (proc->comm));
     fscanf(inFile, "%d", &dummy);
     fscanf(inFile, "%d", &(proc->ppid));
-    for (int i = 0; i < 19; i++)
+    for (int i = 0; i < 19; i++) 
         fscanf(inFile, "%d", &dummy);
-    
     fscanf(inFile, "%ld", &(proc->vsize));
 
     fclose(inFile);
@@ -46,8 +45,6 @@ struct process* initProc(char fileName[]) {
 int main(int argc, char *argv[]) 
 { 
     char name[] = "/proc/1/stat";
-    printf("%s", name);
     struct process* testProc = initProc(name);
-    printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>", testProc->pid, testProc->ppid, testProc->vsize, testProc->comm);
+    printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>\n", testProc->pid, testProc->ppid, testProc->vsize, testProc->comm);
 };
-
