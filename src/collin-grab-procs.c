@@ -4,7 +4,60 @@
 #include <regex.h>
 #include <string.h>
 
-int listProcData(char *name){
+struct process {
+    int pid;                    // process ID
+    int ppid;                   // parent process ID
+    char comm[255];             // ???
+    unsigned long int vsize;    // ???
+
+};
+
+// initialize the process structure
+struct process *initProc(char fileName[]) {
+    struct process *proc = malloc(sizeof(struct process));
+    FILE *inFile = fopen(fileName, "r");
+    int dummy;
+
+    // test for files not existing.
+    if (inFile == NULL) {
+        printf("Error! Could not open file\n");
+        exit(-1);
+    }
+
+    fscanf(inFile, "%d", &(proc->pid));
+    fscanf(inFile, "%s", (proc->comm));
+    fscanf(inFile, "%ls", &dummy);
+    fscanf(inFile, "%d", &(proc->ppid));
+    for (int i = 0; i < 18; i++) 
+        fscanf(inFile, "%d", &dummy);
+    fscanf(inFile, "%ld", &(proc->vsize));
+
+    fclose(inFile);
+
+    return proc;
+ 
+};
+
+// build a process structure and print out its status
+int getProcStatus(char *pid) { 
+    // declare process file path
+    char name[255];
+    strcpy(name, "/proc/");
+    strcat(name, pid);
+    strcat(name, "/stat");
+
+    // build process structure
+    struct process* testProc = initProc(name);
+
+    // print process status
+    printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>\n", testProc->pid, testProc->ppid, testProc->vsize, testProc->comm);
+
+    free(testProc);
+    return 0;
+};
+
+// list the files inside the root folder of a process
+int listProcData(char *name) {
     struct dirent *de;
 
     // create path to process
@@ -27,8 +80,8 @@ int listProcData(char *name){
 
     closedir(procDir);
     return 0;
+};
 
-}
 
 int main(void) {
     struct dirent *de;  // Pointer for directory entry
@@ -53,13 +106,14 @@ int main(void) {
     while ((de = readdir(dr)) != NULL) {
         reti = regexec(&regex, de->d_name, 0, NULL, 0);
         if (!reti){ // if file is a process
-            listProcData(de->d_name);
-            printf("\n");
+            getProcStatus(de->d_name);
         }
     }
+    printf("Cleared while\n");
 
     // free memory, close files and end program
     regfree(&regex);
     closedir(dr);
+    printf("Done.\n");
     return 0;
 }
