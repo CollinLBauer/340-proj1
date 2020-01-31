@@ -20,9 +20,16 @@ struct linkedList {
 
 
 // initialize the process structure
-struct process *initProc(char fileName[]) {
+struct process *initProc(char *pid) {
+    // declare process file path
+    char statPath[255];
+    strcpy(statPath, "/proc/");
+    strcat(statPath, pid);
+    strcat(statPath, "/stat");
+
+
     struct process *proc = malloc(sizeof(struct process));
-    FILE *inFile = fopen(fileName, "r");
+    FILE *inFile = fopen(statPath, "r");
     char dummy[255];
 
     // test for files not existing.
