@@ -61,6 +61,17 @@ int getProcStatus(struct process *proc) {
     return 0;
 };
 
+void myFunc(int pid, struct process *proc, int recLayer) {
+    while (proc != NULL) {
+        for (int i = 0; i < recLayer; i++)
+            printf("\t");
+        printf("(%d) %s, %lu kb\n", proc->pid, proc->comm, (proc->vsize)/1000);
+        if (proc->ppid == pid)
+            myFunc(proc->pid, proc, recLayer + 1);
+        proc = proc->next;
+    }
+}
+
 int main(void) {
     struct dirent *de;  // Pointer for directory entry
 
@@ -97,16 +108,20 @@ int main(void) {
                 while (curr->next != NULL) {
                     curr = curr->next;
                 }
+
+                curr->next = node;
             }
-            curr->next = node;
+            
         }
     }
 
     curr = head;
-    for (int i = 0; i <100; i++) {
-        getProcStatus(curr);
-        curr = curr->next;
-    }
+    //while (curr != NULL) {
+       // getProcStatus(curr);
+     //   curr = curr->next;
+    //}
+
+    myFunc(0, curr, 0);
 
 
     // free memory, close files and end program
