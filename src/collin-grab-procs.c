@@ -7,8 +7,9 @@
 struct process {
     int pid;                    // process ID
     int ppid;                   // parent process ID
-    char comm[255];             // ???
-    unsigned long int vsize;    // ???
+    char comm[255];             // name of executable
+    unsigned long int vsize;    // size of virtual address space
+    //struct process *next;       // next node in linked list
 
 };
 
@@ -16,7 +17,7 @@ struct process {
 struct process *initProc(char fileName[]) {
     struct process *proc = malloc(sizeof(struct process));
     FILE *inFile = fopen(fileName, "r");
-    int dummy;
+    char dummy[255];
 
     // test for files not existing.
     if (inFile == NULL) {
@@ -24,12 +25,17 @@ struct process *initProc(char fileName[]) {
         exit(-1);
     }
 
+    //printf("Scanning file...");             //debug
     fscanf(inFile, "%d", &(proc->pid));
+    //printf(" pid <%d>", proc->pid);         //debug
     fscanf(inFile, "%s", (proc->comm));
-    fscanf(inFile, "%ls", &dummy);
+    //printf("comm <%s>", proc->comm);      //debug
+    fscanf(inFile, "%s", dummy);
+    //printf("DUMMY <%d>\n", dummy);      //debug
     fscanf(inFile, "%d", &(proc->ppid));
+    //printf("ppid <%d>\n", proc->ppid);      //debug
     for (int i = 0; i < 18; i++) 
-        fscanf(inFile, "%d", &dummy);
+        fscanf(inFile, "%s", dummy);
     fscanf(inFile, "%ld", &(proc->vsize));
 
     fclose(inFile);
@@ -45,6 +51,7 @@ int getProcStatus(char *pid) {
     strcpy(name, "/proc/");
     strcat(name, pid);
     strcat(name, "/stat");
+    //printf("name <%s>\n",name);   //debug
 
     // build process structure
     struct process* testProc = initProc(name);
@@ -109,7 +116,6 @@ int main(void) {
             getProcStatus(de->d_name);
         }
     }
-    printf("Cleared while\n");
 
     // free memory, close files and end program
     regfree(&regex);
