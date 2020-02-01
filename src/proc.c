@@ -63,11 +63,12 @@ int getProcStatus(struct process *proc) {
 
 void myFunc(int pid, struct process *proc, int recLayer) {
     while (proc != NULL) {
-        for (int i = 0; i < recLayer; i++)
-            printf("\t");
-        printf("(%d) %s, %lu kb\n", proc->pid, proc->comm, (proc->vsize)/1000);
-        if (proc->ppid == pid)
+        if (proc->ppid == pid) {
+            for (int i = 0; i < recLayer; i++)
+                printf("  ");
+            printf("(%d) %s, %lu kb\n", proc->pid, proc->comm, (proc->vsize)/1000);
             myFunc(proc->pid, proc, recLayer + 1);
+        }
         proc = proc->next;
     }
 }
