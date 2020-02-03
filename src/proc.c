@@ -4,6 +4,7 @@
 #include <regex.h>
 #include <string.h>
 
+// defines the process structure
 struct process {
     int pid;                    // process ID
     int ppid;                   // parent process ID
@@ -13,12 +14,6 @@ struct process {
 
 };
 
-struct linkedList {
-    struct process *head;
-};
-
-
-
 // initialize the process structure
 struct process *initProc(char *pid) {
     // declare process file path
@@ -26,51 +21,75 @@ struct process *initProc(char *pid) {
     strcpy(statPath, "/proc/");
     strcat(statPath, pid);
     strcat(statPath, "/stat");
-
-
-    struct process *proc = malloc(sizeof(struct process));
     FILE *inFile = fopen(statPath, "r");
-    char dummy[255];
 
-    // test for files not existing.
+    // check if file path exists
     if (inFile == NULL) {
         printf("Error! Could not open file\n");
         exit(-1);
     }
+    
+    struct process *proc = malloc(sizeof(struct process));
+    char dummy[255];
 
-    fscanf(inFile, "%d", &(proc->pid));
-    fscanf(inFile, "%s", (proc->comm));
-    fscanf(inFile, "%s", dummy);
-    fscanf(inFile, "%d", &(proc->ppid));
-    for (int i = 0; i < 18; i++) 
+    // scan the file for proc elements
+    fscanf(inFile, "%d", &(proc->pid));     // process ID
+
+    // comm is the process name
+    // This rats nest of code guarantees that the entire name is grabbed,
+    // regardless of spaces. It also removes leading and tailing parentheses.
+    char temp1[255];
+    char temp2[255];
+    fscanf(inFile, "%s", (temp1));     
+    while (temp1[strlen(temp1)-1] != ')') {
+        temp2[0] = '\0';
+        fscanf(inFile, "%s", (temp2));
+        strcat(temp1, " ");
+        strcat(temp1, temp2);
+    }
+    char finalComm[strlen(temp1)-2];
+    for (int i = 0; i < strlen(temp1)-2; i++){
+        finalComm[i] = temp1[i+1];
+    }
+    finalComm[sizeof(finalComm)/sizeof(char)] = '\0';
+    strcpy(proc->comm, finalComm);
+
+    fscanf(inFile, "%s", dummy);            // dummy - skips over single entry
+    fscanf(inFile, "%d", &(proc->ppid));    // Parent process ID
+    for (int i = 0; i < 18; i++)            // dummy - skips over multiple entries
         fscanf(inFile, "%s", dummy);
-    fscanf(inFile, "%ld", &(proc->vsize));
+    fscanf(inFile, "%ld", &(proc->vsize));  // Process vsize
 
+    // close file and return process structure
     fclose(inFile);
-
     return proc;
- 
 };
 
-// build a process structure and print out its status
-int getProcStatus(struct process *proc) { 
+// Recursively finds and prints all child processes of a given process.
+void findChildren(int pid, struct process *proc, int recLayer) {
 
-    // print process status
-    printf("pid <%d>, ppid <%d>, vsize <%ld>, comm <%s>\n", proc->pid, proc->ppid, proc->vsize, proc->comm);
 
-    return 0;
-};
-
-void myFunc(int pid, struct process *proc, int recLayer) {
     while (proc != NULL) {
+
         if (proc->ppid == pid) {
+
+            // Prints spaces for tree-like viewing of processes
             for (int i = 0; i < recLayer; i++)
                 printf("  ");
+
+            
             printf("(%d) %s, %lu kb\n", proc->pid, proc->comm, (proc->vsize)/1000);
-            myFunc(proc->pid, proc, recLayer + 1);
+
+            // Finds all of the children, grandchildren, etc., for the current process
+            findChildren(proc->pid, proc, recLayer + 1);
         }
+
+
+        // Goes to the next process in the singly linked list 
         proc = proc->next;
+
     }
+
 }
 
 int main(void) {
@@ -92,42 +111,51 @@ int main(void) {
         exit(1);
     }
 
+    // Declares a singly linked list of processes and walker node
     struct process *head;
     struct process *curr;
+
     // compare regex to each file in directory
     while ((de = readdir(dr)) != NULL) {
         reti = regexec(&regex, de->d_name, 0, NULL, 0);
         if (!reti){ // if file is a process
 
-            struct process *node = initProc(de->d_name);
-            if (node->pid == 1) {
-                head = node;
+
+            // Creates the head of a linked list
+            if (head == NULL) {
+                head = initProc(de->d_name);
                 curr = head;
             }
 
-            else {
-                while (curr->next != NULL) {
-                    curr = curr->next;
-                }
 
-                curr->next = node;
+            // Adds new processes to linked list
+            // and sets the walker node to the new end of the list.
+            else {
+                curr->next = initProc(de->d_name);
+                curr = curr->next;
             }
+
+            
+
+
             
         }
     }
 
-    curr = head;
-    //while (curr != NULL) {
-       // getProcStatus(curr);
-     //   curr = curr->next;
-    //}
 
-    myFunc(0, curr, 0);
+    // Recursively finds all processes with ppid 0
+    findChildren(0, head, 0);
 
 
     // free memory, close files and end program
     regfree(&regex);
     closedir(dr);
+    while (head->next != NULL) {
+        curr = head->next;
+        head->next = curr->next;
+        free(curr);
+    }
+    free(head);
     printf("Done.\n");
     return 0;
 }
