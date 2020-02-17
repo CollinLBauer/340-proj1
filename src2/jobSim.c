@@ -18,37 +18,27 @@ struct queue {
 
 int main(int argc, char *argv[]) {
     
-    printf("Core still going strong1\n");
     int memSize = atoi(argv[1]);
-    printf("Core still going strong2\n");
     int pageSize = atoi(argv[2]);
-    printf("Core still going strong3\n");
     int numJobs = atoi(argv[3]);
-    printf("Core still going strong4\n");
     int minTime = atoi(argv[4]);
-    printf("Core still going strong5\n");
     int maxTime = atoi(argv[5]);
-    printf("Core still going strong6\n");
     int minMem = atoi(argv[6]);
-    printf("Core still going strong7\n");
     int maxMem = atoi(argv[7]);
-    printf("Core still going strong8\n");
     char *seedChar = getenv("RANDOM_SEED");
-    printf("Core still going strong9\n");
     int seed = atoi(seedChar);
-    printf("Core still going strong10\n");
 
     if (maxMem > memSize) {
-        printf("Maximum memory size of job exceeds possible memory size, exiting.");
+        printf("Maximum memory size of job exceeds possible memory size, exiting.\n");
         exit(1);
     }
     if (minMem > maxMem) {
-        printf("Minimum memory size of job is greater than maximum memory size, exiting");
+        printf("Minimum memory size of job is greater than maximum memory size, exiting.\n");
         exit(1);
     }
 
     if (minTime > maxTime) {
-        printf("Minimum job time is greater than the maximum job time, exiting");
+        printf("Minimum job time is greater than the maximum job time, exiting.\n");
         exit(1);
     }
 
