@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
     struct queue *jobQueue = malloc(sizeof(struct queue));
     struct job *tempJob = NULL;
 
+    // a little bit of debugging
     printf("Size of pageTable: %ld\n", memSize/pageSize * sizeof(struct job*));
     printf("Size of single job: %ld\n", sizeof(struct job*));
 
