@@ -29,7 +29,7 @@ Note that this repository was originally made for the first project, but has bee
    - `<mem-size>` is the total size of memory
    - `<page-size>` is the size of each page
    - `<num-jobs>` is the total number of jobs to simulate
-   - `<min-time>` is the minimum time each job may run
-   - `<max-time>` is the maximum time each job may run
+   - `<min-time>` is the minimum number of time slices each job may have
+   - `<max-time>` is the maximum number of time slices each job may have
    - `<min-mem>` is the minimum memory each job may consume
    - `<max-mem>` is the maximum memory each job may consume

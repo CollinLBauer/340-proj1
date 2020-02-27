@@ -23,11 +23,30 @@ struct queue {
 
 };
 
+
+int runSimulator(struct job **pageTable, struct queue *jobQueue){
+    struct job *curr = jobQueue->head;
+
+    // temp; testing queue structure
+    // should eventually be swapped out with a condition checking job time slices
+    for (int i = 0; i < 10; i++) {
+
+        printf("Running job %d <%p>\n", curr->jobNum, curr);
+
+        if (curr->next == NULL)
+            curr = jobQueue->head;
+        else
+            curr = curr->next;
+    }
+    return 0;
+};
+
+
 int main(int argc, char *argv[]) {
     // assert command line arguments
     if (argc != 8){
         printf("7 positional arguments required. Found %d.\n", argc-1);
-        printf("Usage: ./jobSim <mem-size> <page-size> <num-jobs> <min-time> <max-time> <mind-mem> <max-mem>\n");
+        printf("Usage: ./jobSim <mem-size> <page-size> <num-jobs> <min-time> <max-time> <min-mem> <max-mem>\n");
         exit(1);
     }
 
@@ -70,20 +89,19 @@ int main(int argc, char *argv[]) {
     int seed = atoi(getenv("RANDOM_SEED"));
     srand(seed);
     printf("Seed: %d\n",seed); //debug
-    //int seed = atoi(seedChar);
 
+    // instantiate jobs
     struct job **pageTable = malloc(memSize/pageSize * sizeof(struct job*));
     struct queue *jobQueue = malloc(sizeof(struct queue));
     struct job *tempJob = NULL;
 
-    // a little bit of debugging
-    printf("Size of pageTable: %ld\n", memSize/pageSize * sizeof(struct job*));
-    printf("Size of single job: %ld\n", sizeof(struct job*));
-
+    // generate jobs
     for (int i = 0; i < numJobs; i++) {
         tempJob = malloc(sizeof(struct job));
-        tempJob->timeSlices = (rand() % (maxTime - minTime)) + minTime;
-        tempJob->mem = (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem;
+        // Ternary operators are used here
+        // catches edge cases where max and min values are equal
+        tempJob->timeSlices = (maxTime - minTime) ? (rand() % (maxTime - minTime)) + minTime : maxTime;
+        tempJob->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
         if (tempJob->mem % (2*pageSize) != 0 )
             tempJob->mem += pageSize;
         tempJob->jobNum = i;
@@ -112,9 +130,9 @@ int main(int argc, char *argv[]) {
     }
 
     printf("\nSimulator Starting:\n\n");
+    runSimulator(pageTable, jobQueue);
 
-    
-
-
+    printf("\nDone.\n");
+    exit(0);
 };
 
