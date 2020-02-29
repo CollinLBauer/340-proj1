@@ -12,68 +12,65 @@ struct job {
 
     int jobNum;
     int mem;
-    struct job *next;
+    int nextInSchedule;
     int timeSlices;
     int startTime;
     int endTime;
-
 };
 
-struct memChunk {
-    int jobNum;
-    int lengthInPages;
-    struct memChunk *next;
-    struct memChunk *prev;
-};
 
-int remainingMem(struct memChunk *myChunkyMonkey) {
-    int rtn = myChunkyMonkey->lengthInPages;
-    while (myChunkyMonkey != NULL) {
-        rtn += myChunkyMonkey->lengthInPages;
-        myChunkyMonkey = myChunkyMonkey->next;
+int remainingMem(int memory[], int memSize) {
+
+    int rtn = 0;
+    for (int i = 0; i < memSize; i++) {
+        if (memory[i] == -1)
+            rtn += 1;
     }
+
     return rtn;
 }
 
+void displayPages(int memory[], int memSize) {
+    printf("   Page table: \n      ");
+    for (int i = 0; i < memSize; i++) {
 
-void freeChunk(struct memChunk *chunk) {
-    struct memChunk *temp = NULL;
-    if (chunk->prev != NULL) {
-        if (chunk->prev->jobNum == 0) {
-            temp = chunk->prev;
-            chunk->lengthInPages = chunk->lengthInPages + chunk->prev->lengthInPages;
-            chunk->prev = chunk->prev->prev;
-            chunk->prev->next = chunk;
-            free(temp);
-        }
+        if (i % 16 == 0 && i != 0) 
+            printf("\n      ");
+        else if (i % 4 == 0 && i != 0) 
+            printf(" ");
+
+        if (memory[i] == -1)
+            printf(".");
+        else
+            printf("%d", memory[i] + 1);
+
     }
+    printf("\n");
+}
 
-    if (chunk->next != NULL) {
-        if (chunk->next->jobNum == 0) {
-            temp = chunk->next;
-            chunk->lengthInPages = chunk->lengthInPages + chunk->next->lengthInPages;
-            chunk->next = chunk->next->next;
-            chunk->next->prev = chunk;
-            free(temp);
+void insertJob(int memory[], struct job *theJob, int pageSize, int j) {
+    int filled = 0;
+    int i = 0; 
+    printf("   Job %d starting\n", theJob->jobNum + 1);
+    while (filled < theJob->mem/pageSize) {
+        if (memory[i] == -1) {
+            memory[i] = theJob->jobNum;
+            filled++;
         }
+        i++;
+        
     }
 }
 
-void displayMemory(struct memChunk *chunk) {
-    int i = 0;
-    while (chunk != NULL) {
-        for (int j = 0; j < chunk->lengthInPages; j++) {
-            if (i % 16 == 0 && i != 0) 
-                printf("\n");
-            else if (i % 4 == 0 && i != 0)
-                printf(" ");
-            if (chunk->jobNum == 0)
-                printf(".");
-            else 
-                printf("%d", chunk->jobNum);
-        }
-        chunk = chunk->next;
+void addToScheduler(struct job **allJobs, int index, int frontOfScheduler) {
+
+    
+    while (allJobs[frontOfScheduler]->nextInSchedule != -1 ) {
+        frontOfScheduler = allJobs[frontOfScheduler]->nextInSchedule;
+
     }
+    
+    allJobs[frontOfScheduler]->nextInSchedule = index;
 
 }
 
@@ -127,11 +124,11 @@ int main(int argc, char *argv[]) {
     printf("Seed: %d\n",seed); //debug
 
     // instantiate jobs
-    printf("%ld", sizeof(struct job**));
     struct job **allJobs = malloc(sizeof(struct job**));
 
+    int totalTime = 0;
     // generate jobs
-    for (int i = 0; i <= numJobs; i++) {
+    for (int i = 0; i < numJobs; i++) {
         allJobs[i] = malloc(sizeof(struct job));
         // Ternary operators are used here
         // catches edge cases where max and min values are equal
@@ -139,7 +136,10 @@ int main(int argc, char *argv[]) {
         allJobs[i]->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
         if (allJobs[i]->mem % (2*pageSize) != 0 )
             allJobs[i]->mem += pageSize;
-        allJobs[i]->jobNum = i + 1;
+        allJobs[i]->jobNum = i;
+        allJobs[i]->nextInSchedule = -1;
+        totalTime += allJobs[i]->timeSlices;
+        
     }
 
     printf("Simulator Parameters:\n");
@@ -153,44 +153,71 @@ int main(int argc, char *argv[]) {
     printf("Job Queue:\n");
     printf("\t Job #   Runtime   Memory\n");
     for (int i = 0; i < numJobs; i++) {
-        printf("\t     %d         %d        %d\n", allJobs[i]->jobNum, allJobs[i]->timeSlices, allJobs[i]->mem);
+        printf("\t     %d         %d        %d\n", allJobs[i]->jobNum + 1, allJobs[i]->timeSlices, allJobs[i]->mem);
     }
 
 
     printf("\nSimulator Starting:\n\n");
 
-    struct job *queuedJob = NULL;
-    struct memChunk *memory = malloc(sizeof(struct memChunk));
+    // Creates memory and sets all elements of it to be -1
+    int memory[memSize/pageSize];
+    memset(memory, -1, memSize/pageSize * sizeof(int));
+    
 
-    memory->jobNum = 0;
-    memory->lengthInPages = memSize/pageSize;
-    //struct memChunk *tempMem = memory;
-    //struct memChunk *currChunk = memory;
+    
+    int schedulerFront = -1;
 
+    
+    int i = 0;
+    while (i < totalTime) {
+        printf("Time Step: %d\n", i + 1);
+        for (int j = 0; j < numJobs; j++) {
 
-    struct job *tempJob = NULL;
-    struct job *currJob = allJobs[0];
+            if (allJobs[j]->mem/pageSize <= remainingMem(memory, memSize/pageSize) && allJobs[j]->timeSlices > 0) {
+                if (schedulerFront == -1) {
+                    schedulerFront = j;
+                    allJobs[schedulerFront]->nextInSchedule = -1;
+                }
 
-    while (currJob != NULL) {
-        if (currJob->mem <= remainingMem(memory)) {
-            if (queuedJob == NULL) {
-                queuedJob = currJob;
-                tempJob = queuedJob;
-            }
-            else {
-                tempJob->next = currJob;
-                tempJob = tempJob->next;
-            }
+                else
+                    addToScheduler(allJobs, j, schedulerFront);
 
-            if (memory->jobNum == 0) {
                 
+                
+                insertJob(memory, allJobs[j], pageSize, i + 1);
+                allJobs[j]->startTime = i + 1;
+
+            
             }
 
         }
 
-        currJob = currJob->next;
+        allJobs[schedulerFront]->timeSlices -= 1;
+        printf("   Job %d Running\n", schedulerFront + 1);
+        if (allJobs[schedulerFront]->timeSlices == 0) {
+            printf("   Job %d Completed\n", schedulerFront + 1);
+            allJobs[schedulerFront]->endTime = i + 1;
+            for (int k = 0; k < memSize/pageSize; k++) {
+                if (memory[k] == allJobs[schedulerFront]->jobNum) {
+                    memory[k] = -1;
+                }
+            }
+            
+            schedulerFront = allJobs[schedulerFront]->nextInSchedule;
+        }
 
+        if (allJobs[schedulerFront]->nextInSchedule != -1) {
+                int temp = schedulerFront;
+                schedulerFront = allJobs[schedulerFront]->nextInSchedule;
+                allJobs[temp]->nextInSchedule = -1;
+                addToScheduler(allJobs, temp, schedulerFront);
+            
+        }
+
+        displayPages(memory, memSize/pageSize);
+        i++;
     }
+
     printf("\nDone.\n");
     exit(0);
 };
