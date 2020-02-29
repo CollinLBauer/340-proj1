@@ -13,7 +13,6 @@ struct job {
     int jobNum;
     int mem;
     struct job *next;
-    struct job *nextInQueue;
     int timeSlices;
     int startTime;
     int endTime;
@@ -128,28 +127,20 @@ int main(int argc, char *argv[]) {
     printf("Seed: %d\n",seed); //debug
 
     // instantiate jobs
-    struct job *allJobs = NULL;
-    struct job *tempJob = NULL;
-    struct job *currJob = NULL;
+    printf("%ld", sizeof(struct job**));
+    struct job **allJobs = malloc(sizeof(struct job**));
 
     // generate jobs
-    for (int i = 1; i <= numJobs; i++) {
-        tempJob = malloc(sizeof(struct job));
+    for (int i = 0; i <= numJobs; i++) {
+        allJobs[i] = malloc(sizeof(struct job));
         // Ternary operators are used here
         // catches edge cases where max and min values are equal
-        tempJob->timeSlices = (maxTime - minTime) ? (rand() % (maxTime - minTime)) + minTime : maxTime;
-        tempJob->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
-        if (tempJob->mem % (2*pageSize) != 0 )
-            tempJob->mem += pageSize;
-        tempJob->jobNum = i;
-        if (i == 1)
-            allJobs = tempJob;
-        else
-            currJob->next = tempJob;
-        currJob = tempJob;
+        allJobs[i]->timeSlices = (maxTime - minTime) ? (rand() % (maxTime - minTime)) + minTime : maxTime;
+        allJobs[i]->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
+        if (allJobs[i]->mem % (2*pageSize) != 0 )
+            allJobs[i]->mem += pageSize;
+        allJobs[i]->jobNum = i + 1;
     }
-
-    currJob = allJobs;
 
     printf("Simulator Parameters:\n");
     printf("\tMemory Size: %d\n", memSize);
@@ -162,12 +153,9 @@ int main(int argc, char *argv[]) {
     printf("Job Queue:\n");
     printf("\t Job #   Runtime   Memory\n");
     for (int i = 0; i < numJobs; i++) {
-        printf("\t     %d         %d        %d\n", currJob->jobNum, currJob->timeSlices, currJob->mem);
-        currJob = currJob->next;
+        printf("\t     %d         %d        %d\n", allJobs[i]->jobNum, allJobs[i]->timeSlices, allJobs[i]->mem);
     }
 
-    // Resetting currJob to the head
-    currJob = allJobs;
 
     printf("\nSimulator Starting:\n\n");
 
@@ -180,6 +168,9 @@ int main(int argc, char *argv[]) {
     //struct memChunk *currChunk = memory;
 
 
+    struct job *tempJob = NULL;
+    struct job *currJob = allJobs[0];
+
     while (currJob != NULL) {
         if (currJob->mem <= remainingMem(memory)) {
             if (queuedJob == NULL) {
@@ -187,8 +178,8 @@ int main(int argc, char *argv[]) {
                 tempJob = queuedJob;
             }
             else {
-                tempJob->nextInQueue = currJob;
-                tempJob = tempJob->nextInQueue;
+                tempJob->next = currJob;
+                tempJob = tempJob->next;
             }
 
             if (memory->jobNum == 0) {
