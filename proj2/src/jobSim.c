@@ -15,28 +15,69 @@ struct job {
     struct job *next;
     struct job *nextInQueue;
     int timeSlices;
+    int startTime;
+    int endTime;
 
 };
 
+struct memChunk {
+    int jobNum;
+    int lengthInPages;
+    struct memChunk *next;
+    struct memChunk *prev;
+};
 
-
-/*int runSimulator(struct job **pageTable, struct queue *jobQueue){
-    struct job *curr = jobQueue->head;
-
-    // temp; testing queue structure
-    // should eventually be swapped out with a condition checking job time slices
-    for (int i = 0; i < 10; i++) {
-
-        printf("Running job %d <%p>\n", curr->jobNum, curr);
-
-        if (curr->next == NULL)
-            curr = jobQueue->head;
-        else
-            curr = curr->next;
+int remainingMem(struct memChunk *myChunkyMonkey) {
+    int rtn = myChunkyMonkey->lengthInPages;
+    while (myChunkyMonkey != NULL) {
+        rtn += myChunkyMonkey->lengthInPages;
+        myChunkyMonkey = myChunkyMonkey->next;
     }
-    return 0;
-};
-*/
+    return rtn;
+}
+
+
+void freeChunk(struct memChunk *chunk) {
+    struct memChunk *temp = NULL;
+    if (chunk->prev != NULL) {
+        if (chunk->prev->jobNum == 0) {
+            temp = chunk->prev;
+            chunk->lengthInPages = chunk->lengthInPages + chunk->prev->lengthInPages;
+            chunk->prev = chunk->prev->prev;
+            chunk->prev->next = chunk;
+            free(temp);
+        }
+    }
+
+    if (chunk->next != NULL) {
+        if (chunk->next->jobNum == 0) {
+            temp = chunk->next;
+            chunk->lengthInPages = chunk->lengthInPages + chunk->next->lengthInPages;
+            chunk->next = chunk->next->next;
+            chunk->next->prev = chunk;
+            free(temp);
+        }
+    }
+}
+
+void displayMemory(struct memChunk *chunk) {
+    int i = 0;
+    while (chunk != NULL) {
+        for (int j = 0; j < chunk->lengthInPages; j++) {
+            if (i % 16 == 0 && i != 0) 
+                printf("\n");
+            else if (i % 4 == 0 && i != 0)
+                printf(" ");
+            if (chunk->jobNum == 0)
+                printf(".");
+            else 
+                printf("%d", chunk->jobNum);
+        }
+        chunk = chunk->next;
+    }
+
+}
+
 
 int main(int argc, char *argv[]) {
     // assert command line arguments
@@ -87,7 +128,7 @@ int main(int argc, char *argv[]) {
     printf("Seed: %d\n",seed); //debug
 
     // instantiate jobs
-    struct job *allJobs = malloc(sizeof(struct job));
+    struct job *allJobs = NULL;
     struct job *tempJob = NULL;
     struct job *currJob = NULL;
 
@@ -120,14 +161,45 @@ int main(int argc, char *argv[]) {
 
     printf("Job Queue:\n");
     printf("\t Job #   Runtime   Memory\n");
-    struct job *walker = currJob;
     for (int i = 0; i < numJobs; i++) {
-        printf("\t     %d         %d        %d\n", walker->jobNum, walker->timeSlices, walker->mem);
-        walker = walker->next;
+        printf("\t     %d         %d        %d\n", currJob->jobNum, currJob->timeSlices, currJob->mem);
+        currJob = currJob->next;
     }
+
+    // Resetting currJob to the head
+    currJob = allJobs;
 
     printf("\nSimulator Starting:\n\n");
 
+    struct job *queuedJob = NULL;
+    struct memChunk *memory = malloc(sizeof(struct memChunk));
+
+    memory->jobNum = 0;
+    memory->lengthInPages = memSize/pageSize;
+    //struct memChunk *tempMem = memory;
+    //struct memChunk *currChunk = memory;
+
+
+    while (currJob != NULL) {
+        if (currJob->mem <= remainingMem(memory)) {
+            if (queuedJob == NULL) {
+                queuedJob = currJob;
+                tempJob = queuedJob;
+            }
+            else {
+                tempJob->nextInQueue = currJob;
+                tempJob = tempJob->nextInQueue;
+            }
+
+            if (memory->jobNum == 0) {
+                
+            }
+
+        }
+
+        currJob = currJob->next;
+
+    }
     printf("\nDone.\n");
     exit(0);
 };
