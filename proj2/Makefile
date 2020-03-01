@@ -1,10 +1,11 @@
-all: src
+all: main
 
 clean:
 	rm jobSim
+	rm jobSim-debug
 
-clb: src/jobSim-clb.c
-	gcc -Wall -g -o jobSim src/jobSim-clb.c -lm
+debug: src/jobSim-debug.c
+	gcc -Wall -g -o jobSim-debug src/jobSim-debug.c -lm
 
-src: src/jobSim.c
+main: src/jobSim.c
 	gcc -Wall -g -o jobSim src/jobSim.c -lm
