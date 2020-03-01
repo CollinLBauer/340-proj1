@@ -8,6 +8,8 @@
 // -lm flag is required as a compiler argument to import properly
 #include <math.h>
 
+enum jobState {READY, SCHEDULED, DEAD};
+
 struct job {
 
     int jobNum;
@@ -16,6 +18,8 @@ struct job {
     int timeSlices;
     int startTime;
     int endTime;
+    enum jobState state;
+
 };
 
 
@@ -48,7 +52,7 @@ void displayPages(int memory[], int memSize) {
     printf("\n");
 }
 
-void insertJob(int memory[], struct job *theJob, int pageSize, int j) {
+void insertJob(int memory[], struct job *theJob, int pageSize) {
     int filled = 0;
     int i = 0; 
     printf("   Job %d starting\n", theJob->jobNum + 1);
@@ -70,7 +74,9 @@ void addToScheduler(struct job **allJobs, int index, int frontOfScheduler) {
 
     }
     
+    
     allJobs[frontOfScheduler]->nextInSchedule = index;
+    allJobs[index]->state = SCHEDULED;
 
 }
 
@@ -138,6 +144,7 @@ int main(int argc, char *argv[]) {
             allJobs[i]->mem += pageSize;
         allJobs[i]->jobNum = i;
         allJobs[i]->nextInSchedule = -1;
+        allJobs[i]->state = READY;
         totalTime += allJobs[i]->timeSlices;
         
     }
@@ -172,8 +179,12 @@ int main(int argc, char *argv[]) {
     while (i < totalTime) {
         printf("Time Step: %d\n", i + 1);
         for (int j = 0; j < numJobs; j++) {
-
-            if (allJobs[j]->mem/pageSize <= remainingMem(memory, memSize/pageSize) && allJobs[j]->timeSlices > 0) {
+            if (allJobs[j]->mem/pageSize <= remainingMem(memory, memSize/pageSize) && allJobs[j]->state == READY) {
+                
+                if (allJobs[j]->jobNum == 1) {
+                    printf("Job 2 has %d time slices\n", allJobs[j]->timeSlices);
+                }
+                
                 if (schedulerFront == -1) {
                     schedulerFront = j;
                     allJobs[schedulerFront]->nextInSchedule = -1;
@@ -181,10 +192,10 @@ int main(int argc, char *argv[]) {
 
                 else
                     addToScheduler(allJobs, j, schedulerFront);
-
                 
                 
-                insertJob(memory, allJobs[j], pageSize, i + 1);
+                
+                insertJob(memory, allJobs[j], pageSize);
                 allJobs[j]->startTime = i + 1;
 
             
@@ -198,26 +209,33 @@ int main(int argc, char *argv[]) {
             printf("   Job %d Completed\n", schedulerFront + 1);
             allJobs[schedulerFront]->endTime = i + 1;
             for (int k = 0; k < memSize/pageSize; k++) {
-                if (memory[k] == allJobs[schedulerFront]->jobNum) {
+                if (memory[k] == allJobs[schedulerFront]->jobNum) 
                     memory[k] = -1;
-                }
+                
             }
-            
+            allJobs[schedulerFront]->state = DEAD;
             schedulerFront = allJobs[schedulerFront]->nextInSchedule;
         }
 
-        if (allJobs[schedulerFront]->nextInSchedule != -1) {
+
+        if (schedulerFront >= 0 && schedulerFront < numJobs && allJobs[schedulerFront]->nextInSchedule != -1) {
                 int temp = schedulerFront;
                 schedulerFront = allJobs[schedulerFront]->nextInSchedule;
                 allJobs[temp]->nextInSchedule = -1;
                 addToScheduler(allJobs, temp, schedulerFront);
-            
+                
         }
 
         displayPages(memory, memSize/pageSize);
         i++;
+
     }
 
+    printf("Job Information:\n\n");
+    printf("   Job #   Start Time   End Time\n");
+    for (i = 0; i < numJobs; i++) {
+        printf("       %d            %d         %d\n", i + 1, allJobs[i]->startTime, allJobs[i]->endTime);
+    }
     printf("\nDone.\n");
     exit(0);
 };
