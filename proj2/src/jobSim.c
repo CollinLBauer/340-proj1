@@ -10,6 +10,7 @@
 
 enum jobState {READY, SCHEDULED, DEAD};
 
+// Define the job struct
 struct job {
 
     int jobNum;
@@ -22,7 +23,7 @@ struct job {
 
 };
 
-
+// Finds how many free pages are in memory
 int remainingMem(int memory[], int memSize) {
 
     int rtn = 0;
@@ -34,6 +35,7 @@ int remainingMem(int memory[], int memSize) {
     return rtn;
 }
 
+// Prints out the page table
 void displayPages(int memory[], int memSize) {
     printf("   Page table: \n      ");
     for (int i = 0; i < memSize; i++) {
@@ -52,6 +54,8 @@ void displayPages(int memory[], int memSize) {
     printf("\n");
 }
 
+// Inserts a job into the memory
+// Precondition: there are enough spots in the memory for the job to be inserted in the page table
 void insertJob(int memory[], struct job *theJob, int pageSize) {
     int filled = 0;
     int i = 0; 
@@ -66,6 +70,8 @@ void insertJob(int memory[], struct job *theJob, int pageSize) {
     }
 }
 
+// Adds a job to the end of the scheduler
+// Should only be run if the job is in memory
 void addToScheduler(struct job **allJobs, int index, int frontOfScheduler) {
 
     
@@ -167,17 +173,23 @@ int main(int argc, char *argv[]) {
     printf("\nSimulator Starting:\n\n");
 
     // Creates memory and sets all elements of it to be -1
+    // -1 means that page is unused and i >= 0 means that that page is being used by job i + 1
     int memory[memSize/pageSize];
     memset(memory, -1, memSize/pageSize * sizeof(int));
     
 
-    
+    // We are having a linked list within all of the jobs in the queue to keep track of which job is running
+    // schedulerFront denotes which job should run next. A value of -1 signifies that no jobs are currently
+    // scheduled.
     int schedulerFront = -1;
 
-    
-    int i = 0;
-    while (i < totalTime) {
+    // We can make use of assumptions 2, 4, and 5 from 7.1 in the textbook
+    // we know how long all the jobs should run in total so we can determine 
+    // how long the whole simulation should run.
+    for (int i = 0; i < totalTime; i++) {
         printf("Time Step: %d\n", i + 1);
+
+        // Checks to see if any unscheduled jobs can fit in the free memory and enter the scheduler
         for (int j = 0; j < numJobs; j++) {
             if (allJobs[j]->mem/pageSize <= remainingMem(memory, memSize/pageSize) && allJobs[j]->state == READY) {
                 
@@ -203,8 +215,11 @@ int main(int argc, char *argv[]) {
 
         }
 
+        // Decrements the remaining time slices for the running job by 1
         allJobs[schedulerFront]->timeSlices -= 1;
         printf("   Job %d Running\n", schedulerFront + 1);
+
+        // Checks to see if the current job is now done
         if (allJobs[schedulerFront]->timeSlices == 0) {
             printf("   Job %d Completed\n", schedulerFront + 1);
             allJobs[schedulerFront]->endTime = i + 1;
@@ -217,8 +232,9 @@ int main(int argc, char *argv[]) {
             schedulerFront = allJobs[schedulerFront]->nextInSchedule;
         }
 
-
-        if (schedulerFront >= 0 && schedulerFront < numJobs && allJobs[schedulerFront]->nextInSchedule != -1) {
+        // If there is another job in the schedule then move the next job to the front and pushes the running job all the way
+        // to the back.
+        if (schedulerFront >= 0 && allJobs[schedulerFront]->nextInSchedule != -1) {
                 int temp = schedulerFront;
                 schedulerFront = allJobs[schedulerFront]->nextInSchedule;
                 allJobs[temp]->nextInSchedule = -1;
@@ -226,16 +242,21 @@ int main(int argc, char *argv[]) {
                 
         }
 
+        // prints the current state of the memory 
         displayPages(memory, memSize/pageSize);
-        i++;
 
     }
 
     printf("Job Information:\n\n");
     printf("   Job #   Start Time   End Time\n");
-    for (i = 0; i < numJobs; i++) {
+    
+    for (int i = 0; i < numJobs; i++) {
         printf("       %d            %d         %d\n", i + 1, allJobs[i]->startTime, allJobs[i]->endTime);
+        free(allJobs[i]);
     }
+
+    free(allJobs);
+
     printf("\nDone.\n");
     exit(0);
 };
