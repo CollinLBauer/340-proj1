@@ -37,9 +37,9 @@ void displayPages(int memory[], int memSize) {
             printf(" ");
 
         if (memory[i] == -1)
-            printf(".");
+            printf(". ");
         else
-            printf("%d", memory[i] + 1);
+            printf("%d ", memory[i] + 1);
     }
     printf("\n\n");
 }
