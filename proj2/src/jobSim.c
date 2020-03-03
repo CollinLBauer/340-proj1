@@ -115,7 +115,6 @@ int main(int argc, char *argv[]) {
     // retrieve random seed
     int seed = atoi(getenv("RANDOM_SEED"));
     srand(seed);
-    printf("Seed: %d\n",seed); //debug
 
     // instantiate jobs
     struct job **allJobs = malloc(numJobs * sizeof(struct job));
@@ -131,46 +130,45 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    int totalTime = 0;
     // generate jobs
+    int totalTime = 0;
     for (int i = 0; i < numJobs; i++) {
-
-        // Ternary operators are used here
-        // catches edge cases where max and min values are equal
+        // Ternary operators catch edge cases where max and min values are equal
         allJobs[i]->timeSlices = (maxTime - minTime) ? (rand() % (maxTime - minTime)) + minTime : maxTime;
         allJobs[i]->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
+
         //if (allJobs[i]->mem % (2*pageSize) != 0 )
         //    allJobs[i]->mem += pageSize;
+
         allJobs[i]->jobNum = i;
         allJobs[i]->nextInSchedule = -1;
         allJobs[i]->state = READY;
         totalTime += allJobs[i]->timeSlices;
     }
 
-
+    // list accepted paraeters
     printf("Simulator Parameters:\n");
+    printf("\tRandom Seed: %d\n", seed);
     printf("\tMemory Size: %d\n", memSize);
     printf("\tPage Size: %d\n", pageSize);
-    printf("\tRandom Seed: %d\n", seed);
     printf("\tNumber of jobs: %d\n", numJobs);
     printf("\tRuntime (min-max) timesteps: %d-%d\n", minTime, maxTime);
     printf("\tMemory (min-max): %d-%d\n\n\n", minMem, maxMem);
 
+    // list generated jobs
     printf("Job Queue:\n");
     printf("\t Job #   Runtime   Memory\n");
     for (int i = 0; i < numJobs; i++) {
         printf("\t     %d         %d    %d\n", allJobs[i]->jobNum + 1, allJobs[i]->timeSlices, allJobs[i]->mem);
     }
 
-
     printf("\nSimulator Starting:\n\n");
-
 
     // Creates memory and sets all elements of it to be -1
     // -1 means that page is unused and i >= 0 means that that page is being used by job i + 1
     int memory[memSize/pageSize];
     memset(memory, -1, memSize/pageSize * sizeof(int));
-    
+
 
     // We are having a linked list within all of the jobs in the queue to keep track of which job is running
     // schedulerFront denotes which job should run next. A value of -1 signifies that no jobs are currently
@@ -186,15 +184,13 @@ int main(int argc, char *argv[]) {
         // Checks to see if any unscheduled jobs can fit in the free memory and enter the scheduler
         for (int j = 0; j < numJobs; j++) {
             if (allJobs[j]->mem/pageSize <= remainingMem(memory, memSize/pageSize) && allJobs[j]->state == READY) {
-                
-                
                 if (schedulerFront == -1) {
                     schedulerFront = j;
                     allJobs[schedulerFront]->nextInSchedule = -1;
                 }
                 else
                     addToScheduler(allJobs, j, schedulerFront);
-                
+
                 insertJob(memory, allJobs[j], pageSize);
                 allJobs[j]->startTime = i + 1;
             }
@@ -208,17 +204,18 @@ int main(int argc, char *argv[]) {
         if (allJobs[schedulerFront]->timeSlices == 0) {
             printf("   Job %d Completed\n", schedulerFront + 1);
             allJobs[schedulerFront]->endTime = i + 1;
+
             for (int k = 0; k < memSize/pageSize; k++) {
                 if (memory[k] == allJobs[schedulerFront]->jobNum) 
                     memory[k] = -1;
-                
             }
+
             allJobs[schedulerFront]->state = DEAD;
             schedulerFront = allJobs[schedulerFront]->nextInSchedule;
         }
 
-        // If there is another job in the schedule then move the next job to the front and pushes the running job all the way
-        // to the back.
+        // If there is another job in the schedule then move the next job to the front
+        // and pushes the running job all the way to the back.
         if (schedulerFront >= 0 && allJobs[schedulerFront]->nextInSchedule != -1) {
                 int temp = schedulerFront;
                 schedulerFront = allJobs[schedulerFront]->nextInSchedule;
@@ -229,16 +226,16 @@ int main(int argc, char *argv[]) {
         displayPages(memory, memSize/pageSize);
     }
 
+    // display final job information and free memory
     printf("Job Information:\n\n");
     printf("   Job #   Start Time   End Time\n");
-    
     for (int i = 0; i < numJobs; i++) {
         printf("       %d            %d         %d\n", i + 1, allJobs[i]->startTime, allJobs[i]->endTime);
         free(allJobs[i]);
     }
-    
-    free(allJobs);
 
+    // finish execution
+    free(allJobs);
     printf("\nDone.\n");
     exit(0);
 };
