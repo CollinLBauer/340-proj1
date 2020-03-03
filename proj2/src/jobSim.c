@@ -41,7 +41,7 @@ void displayPages(int memory[], int memSize) {
         else
             printf("%d", memory[i] + 1);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 // Inserts a job into the memory
@@ -67,16 +67,6 @@ void addToScheduler(struct job **allJobs, int index, int frontOfScheduler) {
 
     allJobs[frontOfScheduler]->nextInSchedule = index;
     allJobs[index]->state = SCHEDULED;
-}
-
-// just for debugging
-int listJobs(int numJobs, struct job **jobList){
-    printf("Current job statuses...\n");
-    for (int i = 0; i < numJobs ; i++) {
-        printf("  <%p>: %d; %d\n", jobList[i], jobList[i]-> jobNum, jobList[i]->mem);
-    }
-    printf("\n");
-    return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -129,8 +119,16 @@ int main(int argc, char *argv[]) {
 
     // instantiate jobs
     struct job **allJobs = malloc(numJobs * sizeof(struct job));
+    if (allJobs == NULL) {
+        printf("Malloc failed. Exiting.");
+        exit(1);
+    }
     for (int i = 0; i < numJobs; i++) {
         allJobs[i] = malloc(sizeof(struct job));
+        if (allJobs == NULL) {
+            printf("Malloc failed. Exiting.");
+            exit(1);
+        }
     }
 
     int totalTime = 0;
@@ -141,8 +139,8 @@ int main(int argc, char *argv[]) {
         // catches edge cases where max and min values are equal
         allJobs[i]->timeSlices = (maxTime - minTime) ? (rand() % (maxTime - minTime)) + minTime : maxTime;
         allJobs[i]->mem = (maxMem - minMem) ? (rand() % (maxMem - minMem)/(pageSize)) * pageSize + minMem : maxMem;
-        if (allJobs[i]->mem % (2*pageSize) != 0 )
-            allJobs[i]->mem += pageSize;
+        //if (allJobs[i]->mem % (2*pageSize) != 0 )
+        //    allJobs[i]->mem += pageSize;
         allJobs[i]->jobNum = i;
         allJobs[i]->nextInSchedule = -1;
         allJobs[i]->state = READY;
@@ -161,7 +159,7 @@ int main(int argc, char *argv[]) {
     printf("Job Queue:\n");
     printf("\t Job #   Runtime   Memory\n");
     for (int i = 0; i < numJobs; i++) {
-        printf("\t     %d         %d        %d\n", allJobs[i]->jobNum + 1, allJobs[i]->timeSlices, allJobs[i]->mem);
+        printf("\t     %d         %d    %d\n", allJobs[i]->jobNum + 1, allJobs[i]->timeSlices, allJobs[i]->mem);
     }
 
 
