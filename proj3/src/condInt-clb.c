@@ -15,7 +15,7 @@ void *consumer(void *arg) {
     char *tmp = malloc(256);
     long threadSum = 0;
 
-    // Note: if returnFromDeque = 0 then the queue was empty
+    // Note: if returnFromDeque = -1 then the queue was empty
     while (allDone == 0 || returnFromDeque != -1) {
         
         returnFromDeque = Dequeue(&q, &tmp);
