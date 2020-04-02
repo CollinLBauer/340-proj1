@@ -43,6 +43,7 @@ void *consumer(void *arg) {
                 charNum++;
             }
             printf("Task: %d, Count: %d, Line: %s", num, wordCnt, tmp);
+            threadSum += wordCnt;
         }
     }
 
