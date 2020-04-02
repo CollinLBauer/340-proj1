@@ -13,8 +13,8 @@ Note that this repository was originally made for the first project, but has bee
 ### Steps to run
 1. clone the repository repository
 2. cd to `path/to/340-proj1/proj1`
-2. run `make`
-3. run `./proc`
+3. run `make`
+4. run `./proc`
 
 ---
 
@@ -23,9 +23,9 @@ Note that this repository was originally made for the first project, but has bee
 ### Steps to run
 1. clone the repository repository
 2. cd to `path/to/340-proj1/proj2`
-2. run `make`
-3. set and export the environmnet variable `RANDOM_SEED` to any integer value.
-4. run `./jobSim <mem-size> <page-size> <num-jobs> <min-time> <max-time> <min-mem> <max-mem>`
+3. run `make`
+4. set and export the environmnet variable `RANDOM_SEED` to any integer value.
+5. run `./jobSim <mem-size> <page-size> <num-jobs> <min-time> <max-time> <min-mem> <max-mem>`
    - `<mem-size>` is the total size of memory
    - `<page-size>` is the size of each page
    - `<num-jobs>` is the total number of jobs to simulate
@@ -33,3 +33,13 @@ Note that this repository was originally made for the first project, but has bee
    - `<max-time>` is the maximum number of time slices each job may have
    - `<min-mem>` is the minimum memory each job may consume
    - `<max-mem>` is the maximum memory each job may consume
+
+---
+
+## Project 3 - Multi-Server Queue
+
+### Steps to run
+1. clone the repository repository
+2. cd to `path/to/340-proj1/proj3`
+3. run `make`
+4. run `./condInt <num-threads> < <file-to-read>`

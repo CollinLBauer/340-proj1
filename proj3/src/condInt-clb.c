@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string.h>
 
-#define MAX 256
+#define MAX 256         // acts as max number of lines and max length of single line
 
 char* buffer[MAX];
 int fill_ptr = 0;
@@ -28,7 +28,7 @@ char* get() {
 pthread_cond_t empty, fill = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void* producer(void *arg) {
+void* producer() {
     char input[MAX];
     char* fgot = fgets(input, MAX, stdin);         // first line of file
     while (fgot != NULL){
@@ -64,9 +64,20 @@ void* consumer(void *arg) {
         }
         char *tmp = get();
 
+        char currChar = -1;
+        int charNum = 0;
+        int wordCnt = 1;        // this assumes there will never be an empty line
+        while (currChar != 0){
+            currChar = tmp[charNum];
+            if (currChar == ' '){
+                wordCnt++;
+            }
+            charNum++;
 
-        printf("Consumer %d\n", num);
-        printf("%s", tmp);
+        }
+        printf("Thread %d: %s", num, tmp);
+        printf("  %d words.\n", wordCnt);
+        
 
         assert(pthread_cond_signal(&empty) == 0);
         assert(pthread_mutex_unlock(&mutex) == 0);
@@ -91,10 +102,8 @@ int main(int argc, char* argv[]) {
         assert(pthread_create(&children[i], NULL, consumer, (void *) i) == 0);
     }
 
-    pthread_t p2;
-    assert(pthread_create(&p2, NULL, producer, NULL) == 0);
+    producer();
 
-    assert(pthread_join(p2, NULL) == 0);
 
     for (int i = numThreads - 1; i >= 0; i--) {
 
