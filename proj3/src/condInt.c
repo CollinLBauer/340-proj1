@@ -1,98 +1,111 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <assert.h>
-#include <string.h>
+#include "./list.c"
 
-#define MAX 256
-
-int /*char* */buffer[MAX];
-int fill_ptr = 0;
-int use_ptr = 0;
-int count = 0;
+// Variable to check that has been entered into the thread.
 int allDone = 0;
 
-void put (int str /*char *str*/) {
-    buffer[fill_ptr] = str;
-    fill_ptr = (fill_ptr + 1) % MAX;
-    count++;
+queue_t q;
+
+// Thread to pop tasks off queue and process them
+void *consumer(void *arg) {
+    int num = (long) arg;           // thread number
+    int returnFromDeque = 0;        // exit condition
+    char *tmp = malloc(256);        // line to read
+    long threadSum = 0;             // total words from thread
+
+    // Note: if returnFromDeque = -1 then the queue was empty
+    while (allDone == 0 || returnFromDeque != -1) {
+        returnFromDeque = Dequeue(&q, &tmp);
+        
+        if (!returnFromDeque) {     // true when thread wasn't empty
+
+            /* This code count the number of words.
+             * If it sees white space, it sets an internal flag.
+             * If it sees non-whitespace and the flag is set,
+             * it increments the word count and resets the flag.
+             */
+            char currChar = tmp[0];
+            int charNum = 0;
+            int wordCnt = 0;
+            int whiteSpaceFlag = 1;
+
+            // check first character
+            if (currChar != '\n' && currChar != 0 && currChar != ' ') {
+                wordCnt = 1;
+                whiteSpaceFlag = 0;
+            }
+
+            // check each following character
+            while (currChar != 0 && currChar != '\n') {
+                currChar = tmp[charNum];
+                if (currChar == ' ' || currChar == '\n' || currChar == '\t'){
+                    whiteSpaceFlag = 1;
+                }
+                else if (whiteSpaceFlag){
+                    wordCnt++;
+                    whiteSpaceFlag = 0;
+                }
+                charNum++;
+            }
+
+            // results from line
+            printf("Task: %d, Count: %d, Line: %s", num, wordCnt, tmp);
+            threadSum += wordCnt;
+        }
+    }
+
+    free(tmp);
+    return (void *) threadSum;
 }
 
-int /*char**/ get() {
-    /*char* */int tmp = buffer[use_ptr];
-    use_ptr = (use_ptr + 1) % MAX;
-    count--;
-    return tmp;
-}
-
-pthread_cond_t empty, fill = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void *producer(void *arg) {
+// Parent thread that reads and enqueues lines from stdin
+void producer() {
     char input[256];
     char * fgot = fgets(input, 256, stdin);
+
+    // Note: if the return from fgot was NULL then it read in EOF
     while (fgot != NULL){
-        assert(pthread_mutex_lock(&mutex) == 0);
-        while (count == MAX && allDone == 0) {
-            assert(pthread_cond_wait(&empty, &mutex) == 0);
-        }
-        put(atoi(input));
-        char * fgot = fgets(input, 256, stdin);
-        if (fgot == NULL) {
-            allDone = 1;
-            assert(pthread_cond_broadcast(&fill) == 0);
-            assert(pthread_mutex_unlock(&mutex) == 0); 
-            break;
-        }
-        assert(pthread_cond_signal(&fill) == 0);
-        assert(pthread_mutex_unlock(&mutex) == 0); 
+        Enqueue(&q, input, fgot == NULL);
+        fgot = fgets(input, 256, stdin);
     }
-    return NULL;
-
-}
-
-void *consumer(void *arg) {
-    int num = (long) arg;
-    while (!allDone || count != 0) {
-
-        assert(pthread_mutex_lock(&mutex) == 0);
-        while (count == 0 && !allDone) {
-            assert(pthread_cond_wait(&fill, &mutex) == 0);
-        }
-        if (allDone && count == 0) {
-            assert(pthread_mutex_unlock(&mutex) == 0);
-            break;
-        }
-        /*char **/int tmp = get();
-        assert(pthread_cond_signal(&empty) == 0);
-        assert(pthread_mutex_unlock(&mutex) == 0);
-        printf("%d\n", tmp);
-    }
-
-    return NULL;
+    allDone = 1;
 }
 
 int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Incorrect Usage: Please check README\n");
+        exit(-1);
+    }
 
+    // read number of threads from arg
     int numThreads = atoi(argv[1]);
+    if (numThreads <= 0){
+        fprintf(stderr, "Incorrect Usage: Please check README\n");
+        exit(-1);
+    }
     pthread_t children[numThreads];
 
+    Queue_Init(&q);
+
+    // start consumer threads
     for (long i = 0; i < numThreads; i++) {
         assert(pthread_create(&children[i], NULL, consumer, (void *) i) == 0);
     }
 
-    pthread_t p2;
-    assert(pthread_create(&p2, NULL, producer, NULL) == 0);
+    // producer reads from file and adds to queue
+    producer();
 
-    assert(pthread_join(p2, NULL) == 0);
-    
-
-
+    // accumulate each threads' totals
+    int totalWords = 0;
     for (int i = numThreads - 1; i >= 0; i--) {
-
-        assert(pthread_join(children[i], NULL) == 0);
+        long rValue;
+        assert(pthread_join(children[i], (void **) &rValue) == 0);
+        totalWords += (long) rValue;
     }
 
-
+    // results
+    printf("Program Finished. Total Word Count: %d\n", totalWords);
     return 0;
 }

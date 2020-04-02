@@ -38,6 +38,8 @@ Note that this repository was originally made for the first project, but has bee
 
 ## Project 3 - Multi-Server Queue
 
+This program expects a file to be piped to it through `stdin`, so it may seem to stall without this.
+
 ### Steps to run
 1. clone the repository repository
 2. cd to `path/to/340-proj1/proj3`
@@ -46,3 +48,4 @@ Note that this repository was originally made for the first project, but has bee
    - `<num-threads>` is the number of consumer threads
    - `<file-to-read>` is a plaintext file passed through `stdin`
 
+Also included is a couple of test files and a handy script, `removePunctuation.py`, which copies and strips out all punctuation marks from a plain text file. This helped us get thorough test cases.
