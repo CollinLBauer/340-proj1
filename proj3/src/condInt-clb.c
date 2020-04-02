@@ -31,12 +31,12 @@ void *consumer(void *arg) {
                 wordCnt = 1;
                 whiteSpaceFlag = 0;
             }
-            while (currChar != 0) {
+            while (currChar != 0 && currChar != '\n') {
                 currChar = tmp[charNum];
-                if (currChar == ' '){
+                if (currChar == ' ' || currChar == '\n'){
                     whiteSpaceFlag = 1;
                 }
-                if (currChar != ' ' && whiteSpaceFlag){
+                else (whiteSpaceFlag){
                     wordCnt++;
                     whiteSpaceFlag = 0;
                 }
