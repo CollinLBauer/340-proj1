@@ -64,17 +64,19 @@ void* consumer(void *arg) {
         }
         char *tmp = get();
 
+        // word counter loop
         char currChar = -1;
         int charNum = 0;
-        int wordCnt = 1;        // this assumes there will never be an empty line
+        int wordCnt = 1;        // This will hella not work for his test cases.
         while (currChar != 0){
             currChar = tmp[charNum];
             if (currChar == ' '){
                 wordCnt++;
             }
             charNum++;
-
         }
+
+        // line results
         printf("Thread %d: %s", num, tmp);
         printf("  %d words.\n", wordCnt);
         
