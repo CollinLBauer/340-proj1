@@ -43,3 +43,6 @@ Note that this repository was originally made for the first project, but has bee
 2. cd to `path/to/340-proj1/proj3`
 3. run `make`
 4. run `./condInt <num-threads> < <file-to-read>`
+   - `<num-threads>` is the number of consumer threads
+   - `<file-to-read>` is a plaintext file passed through `stdin`
+

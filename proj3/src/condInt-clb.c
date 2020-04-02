@@ -36,7 +36,7 @@ void *consumer(void *arg) {
                 if (currChar == ' ' || currChar == '\n'){
                     whiteSpaceFlag = 1;
                 }
-                else (whiteSpaceFlag){
+                else if (whiteSpaceFlag){
                     wordCnt++;
                     whiteSpaceFlag = 0;
                 }
